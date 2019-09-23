@@ -55,6 +55,7 @@ import android.graphics.Matrix;
 import java.util.concurrent.TimeUnit;
 
 
+import android.widget.TextView;
 import android.widget.Toast;
 
 import android.content.DialogInterface;
@@ -161,10 +162,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void choosePhotoFromGallery() {
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK,
-                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT,MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
-        startActivityForResult(galleryIntent, GALLERY);
+        if (galleryIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(galleryIntent, GALLERY);
+        }
     }
 
     private void takePhotoFromCamera() {
@@ -180,18 +182,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         if (requestCode == GALLERY) {
+
             if (data != null) {
                 Uri contentURI = data.getData();
                 try {
                     Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), contentURI);
                     isHuman(bitmap);
-
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                     Toast.makeText(MainActivity.this, "Failed!", Toast.LENGTH_SHORT).show();
                 }
             }
-
         } else if (requestCode == CAMERA) {
             Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
             isHuman(thumbnail);
@@ -211,7 +213,9 @@ public class MainActivity extends AppCompatActivity {
                                     public void onSuccess(List<FirebaseVisionFace> faces) {
                                         // Task completed successfully
                                         // ...
+                                        int counter =0;
                                         for (FirebaseVisionFace face : faces) {
+
                                             Rect bounds = face.getBoundingBox();
                                             float rotY = face.getHeadEulerAngleY();  // Head is rotated to the right rotY degrees
                                             float rotZ = face.getHeadEulerAngleZ();  // Head is tilted sideways rotZ degrees
@@ -229,7 +233,13 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                             else
                                                 Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_SHORT).show();
+// 
+//                                                 counter=1;
+//                                                 imageview.setImageBitmap(thumbnail);
+//                                                 Toast.makeText(MainActivity.this, "Image Saved!", Toast.LENGTH_SHORT).show();
                                         }
+//                                         if(counter!=1)
+//                                             Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_LONG).show();
                                     }
 
 
