@@ -24,6 +24,4 @@
         android:text="Upload Image"
         android:layout_weight="1"
         />
-
-
 </LinearLayout>
