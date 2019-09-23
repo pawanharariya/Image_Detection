@@ -213,36 +213,24 @@ public class MainActivity extends AppCompatActivity {
                                     public void onSuccess(List<FirebaseVisionFace> faces) {
                                         // Task completed successfully
                                         // ...
-                                        int counter =0;
+                                        int counter = 0;
                                         for (FirebaseVisionFace face : faces) {
 
-                                            Rect bounds = face.getBoundingBox();
-                                            float rotY = face.getHeadEulerAngleY();  // Head is rotated to the right rotY degrees
-                                            float rotZ = face.getHeadEulerAngleZ();  // Head is tilted sideways rotZ degrees
-
-                                            // If landmark detection was enabled (mouth, ears, eyes, cheeks, and
-                                            // nose available):
 //                                            FirebaseVisionFaceLandmark leftEar = face.getLandmark(FirebaseVisionFaceLandmark.LEFT_EYE);
 //                                            Log.d("Face Contours",String.valueOf(leftEar));
 //                                            Toast.makeText(MainActivity.this, "ABCD", Toast.LENGTH_SHORT).show();
                                             List<FirebaseVisionPoint> faceContours = face.getContour(FirebaseVisionFaceContour.ALL_POINTS).getPoints();
-                                            Log.v("FaceContours",String.valueOf(faceContours));
+                                            //Log.v("FaceContours",String.valueOf(faceContours));
                                             if (faceContours != null) {
                                                 imageview.setImageBitmap(thumbnail);
                                                 Toast.makeText(MainActivity.this, "Image Saved!", Toast.LENGTH_SHORT).show();
+                                                counter = 1;
                                             }
-                                            else
-                                                Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_SHORT).show();
-// 
-//                                                 counter=1;
-//                                                 imageview.setImageBitmap(thumbnail);
-//                                                 Toast.makeText(MainActivity.this, "Image Saved!", Toast.LENGTH_SHORT).show();
+
                                         }
-//                                         if(counter!=1)
-//                                             Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_LONG).show();
+                                        if (counter != 1)
+                                            Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_SHORT).show();
                                     }
-
-
                                 })
                         .addOnFailureListener(
                                 new OnFailureListener() {
