@@ -1,13 +1,17 @@
 package com.example.image_detection;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.media.Image;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -20,6 +24,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import com.google.firebase.ml.vision.common.FirebaseVisionPoint;
 import com.google.firebase.ml.vision.face.FirebaseVisionFace;
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceContour;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceLandmark;
@@ -28,6 +33,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -80,12 +86,17 @@ public class MainActivity extends AppCompatActivity {
     private Button btn;
     private ImageView imageview;
     private int GALLERY = 1, CAMERA = 2;
+    public final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 10;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        String[] PERMISSIONS = {android.Manifest.permission.CAMERA, android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        if (!hasPermissions(this, PERMISSIONS)) {
+            ActivityCompat.requestPermissions((Activity) this, PERMISSIONS, 10);
+        }
         btn = (Button) findViewById(R.id.uploadButton);
         imageview = (ImageView) findViewById(R.id.image);
 
@@ -97,11 +108,34 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
+                    // Call your camera here.
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+    private boolean hasPermissions(Context context, String... permissions) {
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
+            for (String permission : permissions) {
+                if (ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     FirebaseVisionFaceDetectorOptions highAccuracyOpts =
             new FirebaseVisionFaceDetectorOptions.Builder()
-                    .setPerformanceMode(FirebaseVisionFaceDetectorOptions.ACCURATE)
+                    .setPerformanceMode(FirebaseVisionFaceDetectorOptions.FAST)
                     .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
+                    .setContourMode(FirebaseVisionFaceDetectorOptions.ALL_CONTOURS)
                     .build();
 
     private void showPictureDialog() {
@@ -181,13 +215,34 @@ public class MainActivity extends AppCompatActivity {
                                         // ...
                                         int counter =0;
                                         for (FirebaseVisionFace face : faces) {
-                                                counter=1;
+
+                                            Rect bounds = face.getBoundingBox();
+                                            float rotY = face.getHeadEulerAngleY();  // Head is rotated to the right rotY degrees
+                                            float rotZ = face.getHeadEulerAngleZ();  // Head is tilted sideways rotZ degrees
+
+                                            // If landmark detection was enabled (mouth, ears, eyes, cheeks, and
+                                            // nose available):
+//                                            FirebaseVisionFaceLandmark leftEar = face.getLandmark(FirebaseVisionFaceLandmark.LEFT_EYE);
+//                                            Log.d("Face Contours",String.valueOf(leftEar));
+//                                            Toast.makeText(MainActivity.this, "ABCD", Toast.LENGTH_SHORT).show();
+                                            List<FirebaseVisionPoint> faceContours = face.getContour(FirebaseVisionFaceContour.ALL_POINTS).getPoints();
+                                            Log.v("FaceContours",String.valueOf(faceContours));
+                                            if (faceContours != null) {
                                                 imageview.setImageBitmap(thumbnail);
                                                 Toast.makeText(MainActivity.this, "Image Saved!", Toast.LENGTH_SHORT).show();
+                                            }
+                                            else
+                                                Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_SHORT).show();
+// 
+//                                                 counter=1;
+//                                                 imageview.setImageBitmap(thumbnail);
+//                                                 Toast.makeText(MainActivity.this, "Image Saved!", Toast.LENGTH_SHORT).show();
                                         }
-                                        if(counter!=1)
-                                            Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_LONG).show();
+//                                         if(counter!=1)
+//                                             Toast.makeText(MainActivity.this, "Not a Human Image!", Toast.LENGTH_LONG).show();
                                     }
+
+
                                 })
                         .addOnFailureListener(
                                 new OnFailureListener() {
